@@ -2,13 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
-	"time"
 )
-
-type Client struct {
-	httpClient *http.Client
-}
 
 type RespShallowLocations struct {
 	Count    int     `json:"count"`
@@ -20,19 +16,10 @@ type RespShallowLocations struct {
 	} `json:"results"`
 }
 
-func NewClient(timeout int) *Client {
-	client := &http.Client{
-		Timeout: time.Duration(5 * time.Second),
-	}
-	return &Client{
-		httpClient: client,
-	}
-}
-
-func (c *Client) GetLocationAreas(url *string) (RespShallowLocations, error) {
-	requestURL := BaseUrl + "/location-area"
-	if url != nil {
-		requestURL = *url
+func (c *Client) GetLocationAreas(pageURL *string) (RespShallowLocations, error) {
+	requestURL := baseURL + "/location-area"
+	if pageURL != nil {
+		requestURL = *pageURL
 	}
 	res, err := c.httpClient.Get(requestURL)
 	if err != nil {
@@ -42,9 +29,40 @@ func (c *Client) GetLocationAreas(url *string) (RespShallowLocations, error) {
 
 	locationsData := RespShallowLocations{}
 
-	dec := json.NewDecoder(res.Body)
-	if err := dec.Decode(&locationsData); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&locationsData); err != nil {
 		return RespShallowLocations{}, err
 	}
+	return locationsData, nil
+}
+
+func (c *Client) GetLocationAreasAlt(pageURL *string) (RespShallowLocations, error) {
+	requestURL := baseURL + "/location-area"
+	if pageURL != nil {
+		requestURL = *pageURL
+	}
+
+	req, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return RespShallowLocations{}, err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return RespShallowLocations{}, err
+	}
+
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return RespShallowLocations{}, err
+	}
+
+	locationsData := RespShallowLocations{}
+	err = json.Unmarshal(data, &locationsData)
+	if err != nil {
+		return RespShallowLocations{}, err
+	}
+
 	return locationsData, nil
 }

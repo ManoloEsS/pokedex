@@ -7,13 +7,12 @@ import (
 	"strings"
 
 	"github.com/ManoloEsS/pokedex/internal/api"
-	internal "github.com/ManoloEsS/pokedex/internal/api"
 )
 
 type Config struct {
-	pokeapiClient    *api.Client
-	nextLocationsURL *string
-	prevLocationsURL *string
+	PokeapiClient    *api.Client
+	NextLocationsURL *string
+	PrevLocationsURL *string
 }
 
 type cliCommand struct {
@@ -22,14 +21,8 @@ type cliCommand struct {
 	callback    func(*Config) error
 }
 
-func StartRepl() {
+func StartRepl(cfg *Config) {
 	scanner := bufio.NewScanner(os.Stdin)
-	cfg := &Config{
-		pokeapiClient:    internal.NewClient(5),
-		nextLocationsURL: nil,
-		prevLocationsURL: nil,
-	}
-
 	for {
 		fmt.Print("Pokedex > ")
 		if scanner.Scan() {
@@ -62,11 +55,6 @@ func cleanInput(text string) []string {
 
 func getCommands() map[string]cliCommand {
 	return map[string]cliCommand{
-		"exit": {
-			name:        "exit",
-			description: "Exit the Pokedex",
-			callback:    commandExit,
-		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -81,6 +69,11 @@ func getCommands() map[string]cliCommand {
 			name:        "mapb",
 			description: "Displays the names of the previous 20 locations",
 			callback:    commandMapb,
+		},
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
 		},
 	}
 }
