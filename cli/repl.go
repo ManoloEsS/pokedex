@@ -10,9 +10,9 @@ import (
 )
 
 type Config struct {
-	PokeapiClient    *api.Client
-	NextLocationsURL *string
-	PrevLocationsURL *string
+	PokeapiClient    api.Client
+	nextLocationsURL *string
+	prevLocationsURL *string
 }
 
 type cliCommand struct {
@@ -23,6 +23,7 @@ type cliCommand struct {
 
 func StartRepl(cfg *Config) {
 	scanner := bufio.NewScanner(os.Stdin)
+	commands := getCommands()
 	for {
 		fmt.Print("Pokedex > ")
 		if scanner.Scan() {
@@ -32,7 +33,7 @@ func StartRepl(cfg *Config) {
 				continue
 			}
 			commandName := cleaned[0]
-			if command, ok := getCommands()[commandName]; ok {
+			if command, ok := commands[commandName]; ok {
 				err := command.callback(cfg)
 				if err != nil {
 					fmt.Println(err)
@@ -42,9 +43,9 @@ func StartRepl(cfg *Config) {
 				continue
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error reading input: ", err)
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintln(os.Stderr, "Error reading input: ", err)
+		}
 	}
 }
 

@@ -6,9 +6,8 @@ import (
 )
 
 type Cache struct {
-	cache    *map[string]cacheEntry
-	mu       *sync.RWMutex
-	interval time.Duration
+	cacheData map[string]cacheEntry
+	mux       *sync.RWMutex
 }
 
 type cacheEntry struct {
@@ -16,8 +15,13 @@ type cacheEntry struct {
 	val       []byte
 }
 
-func NewCache(interval int) (*Cache, error) {
+func NewCache(intervalDuration time.Duration) Cache {
+	cache := Cache{
+		cacheData: make(map[string]cacheEntry),
+		mux:       &sync.RWMutex{},
+	}
 
-	return nil, nil
+	go cache.reapLoop(intervalDuration)
+
+	return cache
 }
-

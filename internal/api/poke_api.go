@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type RespShallowLocations struct {
@@ -17,28 +18,22 @@ type RespShallowLocations struct {
 }
 
 func (c *Client) GetLocationAreas(pageURL *string) (RespShallowLocations, error) {
-	requestURL := baseURL + "/location-area"
-	if pageURL != nil {
-		requestURL = *pageURL
-	}
-	res, err := c.httpClient.Get(requestURL)
+	requestURL, err := url.JoinPath(baseURL, "location-area")
 	if err != nil {
 		return RespShallowLocations{}, err
 	}
-	defer res.Body.Close()
-
-	locationsData := RespShallowLocations{}
-
-	if err := json.NewDecoder(res.Body).Decode(&locationsData); err != nil {
-		return RespShallowLocations{}, err
-	}
-	return locationsData, nil
-}
-
-func (c *Client) GetLocationAreasAlt(pageURL *string) (RespShallowLocations, error) {
-	requestURL := baseURL + "/location-area"
 	if pageURL != nil {
 		requestURL = *pageURL
+	}
+
+	if val, ok := c.cache.Get(requestURL); ok {
+		locationsResp := RespShallowLocations{}
+		err := json.Unmarshal(val, &locationsResp)
+		if err != nil {
+			return RespShallowLocations{}, err
+		}
+
+		return locationsResp, nil
 	}
 
 	req, err := http.NewRequest("GET", requestURL, nil)
@@ -58,11 +53,12 @@ func (c *Client) GetLocationAreasAlt(pageURL *string) (RespShallowLocations, err
 		return RespShallowLocations{}, err
 	}
 
-	locationsData := RespShallowLocations{}
-	err = json.Unmarshal(data, &locationsData)
+	locationsResp := RespShallowLocations{}
+	err = json.Unmarshal(data, &locationsResp)
 	if err != nil {
 		return RespShallowLocations{}, err
 	}
 
-	return locationsData, nil
+	c.cache.Add(requestURL, data)
+	return locationsResp, nil
 }
