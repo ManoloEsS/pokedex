@@ -5,33 +5,37 @@ import (
 )
 
 func (c *Cache) Add(key string, value []byte) {
-	newEntry := CacheEntry{CreatedAt: time.Now(), Val: value}
-	c.Mu.Lock()
-	c.CacheData[key] = newEntry
-	c.Mu.Unlock()
+	c.mux.Lock()
+	c.cacheData[key] = cacheEntry{
+		createdAt: time.Now().UTC(),
+		val:       value,
+	}
+	c.mux.Unlock()
 }
 
 func (c *Cache) Get(key string) ([]byte, bool) {
-	c.Mu.RLock()
-	value, ok := c.CacheData[key]
-	c.Mu.RUnlock()
+	c.mux.RLock()
+	value, ok := c.cacheData[key]
+	c.mux.RUnlock()
 	if !ok {
 		return nil, false
 	}
-	return value.Val, true
+	return value.val, true
 }
 
-func (c *Cache) reapLoop() {
-	ticker := time.NewTicker(c.Interval)
+func (c *Cache) reapLoop(interval time.Duration) {
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-
 	for range ticker.C {
-		c.Mu.Lock()
-		for key, entry := range c.CacheData {
-			if time.Since(entry.CreatedAt) > c.Interval {
-				delete(c.CacheData, key)
-			}
+		c.reap(time.Now().UTC(), interval)
+	}
+}
+func (c *Cache) reap(now time.Time, last time.Duration) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	for key, entry := range c.cacheData {
+		if entry.createdAt.Before(now.Add(-last)) {
+			delete(c.cacheData, key)
 		}
-		c.Mu.Unlock()
 	}
 }

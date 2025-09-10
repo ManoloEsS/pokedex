@@ -5,8 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-
-	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
 type RespShallowLocations struct {
@@ -20,40 +18,22 @@ type RespShallowLocations struct {
 }
 
 func (c *Client) GetLocationAreas(pageURL *string) (RespShallowLocations, error) {
-	requestURL := baseURL
-	if pageURL != nil {
-		requestURL = *pageURL
-	} else {
-		var err error
-		requestURL, err = url.JoinPath(baseURL, "location-area")
-		if err != nil {
-			return RespShallowLocations{}, err
-		}
-	}
-	res, err := c.httpClient.Get(requestURL)
+	requestURL, err := url.JoinPath(baseURL, "location-area")
 	if err != nil {
 		return RespShallowLocations{}, err
 	}
-	defer res.Body.Close()
-
-	locationsData := RespShallowLocations{}
-
-	if err := json.NewDecoder(res.Body).Decode(&locationsData); err != nil {
-		return RespShallowLocations{}, err
-	}
-	return locationsData, nil
-}
-
-func (c *Client) GetLocationAreasAlt(pageURL *string, cache *cache.Cache) (RespShallowLocations, error) {
-	requestURL := baseURL
 	if pageURL != nil {
 		requestURL = *pageURL
-	} else {
-		var err error
-		requestURL, err = url.JoinPath(baseURL, "location-area")
+	}
+
+	if val, ok := c.cache.Get(requestURL); ok {
+		locationsResp := RespShallowLocations{}
+		err := json.Unmarshal(val, &locationsResp)
 		if err != nil {
 			return RespShallowLocations{}, err
 		}
+
+		return locationsResp, nil
 	}
 
 	req, err := http.NewRequest("GET", requestURL, nil)
@@ -73,19 +53,12 @@ func (c *Client) GetLocationAreasAlt(pageURL *string, cache *cache.Cache) (RespS
 		return RespShallowLocations{}, err
 	}
 
-	cache.Add(requestURL, data)
-	// fmt.Printf("added %s to cache\n", requestURL)
-	// for k, v := range cache.CacheData {
-	// 	fmt.Println(k)
-	// 	fmt.Println(string(v.Val))
-
-	//}
-
-	locationsData := RespShallowLocations{}
-	err = json.Unmarshal(data, &locationsData)
+	locationsResp := RespShallowLocations{}
+	err = json.Unmarshal(data, &locationsResp)
 	if err != nil {
 		return RespShallowLocations{}, err
 	}
 
-	return locationsData, nil
+	c.cache.Add(requestURL, data)
+	return locationsResp, nil
 }

@@ -1,72 +1,45 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/ManoloEsS/pokedex/internal/api"
-	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
-func commandMapf(cfg *Config, cache *cache.Cache) error {
-	locationsData := &api.RespShallowLocations{}
-
-	url := ""
-	if cfg.NextLocationsURL != nil {
-		url = *cfg.NextLocationsURL
-	}
-
-	if cached, found := cache.Get(url); found {
-		err := json.Unmarshal(cached, locationsData)
-		if err != nil {
-		}
+func commandMapf(cfg *Config) error {
+	locationsResp, err := cfg.PokeapiClient.GetLocationAreas(cfg.nextLocationsURL)
+	if err != nil {
 		return err
-	} else {
-		resp, err := cfg.PokeapiClient.GetLocationAreasAlt(cfg.NextLocationsURL, cache)
-		if err != nil {
-			return err
-		}
-		*locationsData = resp
 	}
 
-	printLocations(locationsData)
+	cfg.nextLocationsURL = locationsResp.Next
+	cfg.prevLocationsURL = locationsResp.Previous
 
-	cfg.NextLocationsURL = locationsData.Next
-	cfg.PrevLocationsURL = locationsData.Previous
+	printLocations(locationsResp)
 
 	return nil
 }
 
-func commandMapb(cfg *Config, cache *cache.Cache) error {
-	if cfg.PrevLocationsURL == nil {
+func commandMapb(cfg *Config) error {
+	if cfg.prevLocationsURL == nil {
 		return errors.New("you are already on the first page...")
 	}
 
-	locationsData := &api.RespShallowLocations{}
-
-	if cached, found := cache.Get(*cfg.PrevLocationsURL); found {
-		err := json.Unmarshal(cached, locationsData)
-		if err != nil {
-			return err
-		}
-	} else {
-		resp, err := cfg.PokeapiClient.GetLocationAreasAlt(cfg.PrevLocationsURL, cache)
-		if err != nil {
-			return err
-		}
-		*locationsData = resp
+	locationsResp, err := cfg.PokeapiClient.GetLocationAreas(cfg.prevLocationsURL)
+	if err != nil {
+		return err
 	}
 
-	printLocations(locationsData)
+	cfg.nextLocationsURL = locationsResp.Next
+	cfg.prevLocationsURL = locationsResp.Previous
 
-	cfg.NextLocationsURL = locationsData.Next
-	cfg.PrevLocationsURL = locationsData.Previous
+	printLocations(locationsResp)
 
 	return nil
 }
 
-func printLocations(locations *api.RespShallowLocations) {
+func printLocations(locations api.RespShallowLocations) {
 	for _, location := range locations.Results {
 		fmt.Printf("%s\n", location.Name)
 	}

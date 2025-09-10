@@ -2,11 +2,9 @@ package cli
 
 import (
 	"fmt"
-
-	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
-func commandHelp(cfg *Config, cache *cache.Cache) error {
+func commandHelp(cfg *Config) error {
 	fmt.Println()
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")

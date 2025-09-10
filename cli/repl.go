@@ -7,22 +7,21 @@ import (
 	"strings"
 
 	"github.com/ManoloEsS/pokedex/internal/api"
-	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
 type Config struct {
-	PokeapiClient    *api.Client
-	NextLocationsURL *string
-	PrevLocationsURL *string
+	PokeapiClient    api.Client
+	nextLocationsURL *string
+	prevLocationsURL *string
 }
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*Config, *cache.Cache) error
+	callback    func(*Config) error
 }
 
-func StartRepl(cfg *Config, cache *cache.Cache) {
+func StartRepl(cfg *Config) {
 	scanner := bufio.NewScanner(os.Stdin)
 	commands := getCommands()
 	for {
@@ -35,7 +34,7 @@ func StartRepl(cfg *Config, cache *cache.Cache) {
 			}
 			commandName := cleaned[0]
 			if command, ok := commands[commandName]; ok {
-				err := command.callback(cfg, cache)
+				err := command.callback(cfg)
 				if err != nil {
 					fmt.Println(err)
 				}
