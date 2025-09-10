@@ -6,18 +6,23 @@ import (
 )
 
 type Cache struct {
-	cache    *map[string]cacheEntry
-	mu       *sync.RWMutex
-	interval time.Duration
+	CacheData map[string]CacheEntry
+	Mu        sync.RWMutex
+	Interval  time.Duration
 }
 
-type cacheEntry struct {
-	createdAt time.Time
-	val       []byte
+type CacheEntry struct {
+	CreatedAt time.Time
+	Val       []byte
 }
 
-func NewCache(interval int) (*Cache, error) {
+func NewCache(intervalDuration time.Duration) *Cache {
+	if intervalDuration <= 0 {
+		intervalDuration = 5 * time.Second
+	}
+	cache := &Cache{CacheData: make(map[string]CacheEntry), Interval: intervalDuration}
 
-	return nil, nil
+	go cache.reapLoop()
+
+	return cache
 }
-

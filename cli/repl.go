@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ManoloEsS/pokedex/internal/api"
+	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
 type Config struct {
@@ -18,11 +19,12 @@ type Config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*Config) error
+	callback    func(*Config, *cache.Cache) error
 }
 
-func StartRepl(cfg *Config) {
+func StartRepl(cfg *Config, cache *cache.Cache) {
 	scanner := bufio.NewScanner(os.Stdin)
+	commands := getCommands()
 	for {
 		fmt.Print("Pokedex > ")
 		if scanner.Scan() {
@@ -32,8 +34,8 @@ func StartRepl(cfg *Config) {
 				continue
 			}
 			commandName := cleaned[0]
-			if command, ok := getCommands()[commandName]; ok {
-				err := command.callback(cfg)
+			if command, ok := commands[commandName]; ok {
+				err := command.callback(cfg, cache)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -42,9 +44,9 @@ func StartRepl(cfg *Config) {
 				continue
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error reading input: ", err)
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintln(os.Stderr, "Error reading input: ", err)
+		}
 	}
 }
 

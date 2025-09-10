@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/ManoloEsS/pokedex/cli"
 	"github.com/ManoloEsS/pokedex/internal/api"
+	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
 func main() {
@@ -11,5 +12,7 @@ func main() {
 		NextLocationsURL: nil,
 		PrevLocationsURL: nil,
 	}
-	cli.StartRepl(cfg)
+
+	cache := cache.NewCache(0)
+	cli.StartRepl(cfg, cache)
 }
