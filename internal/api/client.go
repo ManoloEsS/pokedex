@@ -7,7 +7,7 @@ import (
 	"github.com/ManoloEsS/pokedex/internal/cache"
 )
 
-const baseURL = "https://pokeapi.co/api/v2"
+const BaseURL = "https://pokeapi.co/api/v2"
 
 type Client struct {
 	httpClient http.Client

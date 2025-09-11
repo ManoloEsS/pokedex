@@ -7,7 +7,7 @@ import (
 	"github.com/ManoloEsS/pokedex/internal/api"
 )
 
-func commandMapf(cfg *Config) error {
+func commandMapf(cfg *Config, parameter string) error {
 	locationsResp, err := cfg.PokeapiClient.GetLocationAreas(cfg.nextLocationsURL)
 	if err != nil {
 		return err
@@ -21,7 +21,7 @@ func commandMapf(cfg *Config) error {
 	return nil
 }
 
-func commandMapb(cfg *Config) error {
+func commandMapb(cfg *Config, parameter string) error {
 	if cfg.prevLocationsURL == nil {
 		return errors.New("you are already on the first page...")
 	}
