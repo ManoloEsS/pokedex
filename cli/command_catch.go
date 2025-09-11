@@ -27,12 +27,13 @@ func commandCatch(cfg *Config, pokemonName string) error {
 	}
 
 	fmt.Printf("%s was caught!\n", pokemonName)
+	fmt.Println()
 	cfg.addToPokedex(pokemonData)
 	return nil
 }
 
 func catchAttemptSuccess(pokemon api.PokemonData) bool {
-	maxLevel := 400
+	maxLevel := 500
 
 	if pokemon.BaseExperience > maxLevel {
 		maxLevel = pokemon.BaseExperience + 1
@@ -55,4 +56,5 @@ func (cfg *Config) addToPokedex(pokemon api.PokemonData) {
 
 	cfg.Pokedex[pokemon.Name] = pokemon
 	fmt.Printf("%s has been added to the pokedex\n", pokemon.Name)
+	fmt.Println()
 }
