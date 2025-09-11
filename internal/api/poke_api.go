@@ -40,6 +40,21 @@ func (c *Client) GetAreaData(areaName string) (AreaData, error) {
 	return areaData, nil
 }
 
+func (c *Client) GetPokemonData(pokemonName string) (PokemonData, error) {
+	requestURL, err := url.JoinPath(BaseURL, "pokemon", pokemonName)
+	if err != nil {
+		return PokemonData{}, err
+	}
+
+	pokemonData, err := GetResponseData[PokemonData](c, requestURL)
+	if err != nil {
+		return PokemonData{}, err
+	}
+
+	return pokemonData, nil
+
+}
+
 func GetResponseData[T any](client *Client, reqURL string) (T, error) {
 	var dataType T
 	if val, ok := client.cache.Get(reqURL); ok {

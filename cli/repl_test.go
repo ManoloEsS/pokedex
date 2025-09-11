@@ -120,3 +120,17 @@ func TestGetCommands(t *testing.T) {
 // 	}
 // }
 
+// Further testing for the `catch` command could include:
+//
+// 1. Testing API Error Handling:
+//    - Mock the `GetPokemon` method to return an error.
+//    - Assert that `commandCatch` correctly propagates this error.
+//
+// 2. Testing Already Caught Pokemon:
+//    - Add a pokemon to the `playerPokedex` map.
+//    - Call `commandCatch` with the same pokemon name.
+//    - Assert that the function returns the expected "already caught" message/error.
+//
+// 3. Testing Edge Cases for `BaseExperience`:
+//    - Test with a pokemon having a `BaseExperience` of 0.
+//    - Test with a very high `BaseExperience` to ensure the probability calculation is correct.

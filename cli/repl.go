@@ -13,6 +13,7 @@ type Config struct {
 	PokeapiClient    api.Client
 	nextLocationsURL *string
 	prevLocationsURL *string
+	Pokedex          map[string]api.PokemonData
 }
 
 type cliCommand struct {
@@ -54,8 +55,9 @@ func StartRepl(cfg *Config) {
 }
 
 func cleanInput(text string) []string {
-	lowered := strings.ToLower(text)
-	return strings.Fields(strings.TrimSpace(lowered))
+	trimmed := strings.TrimSpace(text)
+	lowered := strings.ToLower(trimmed)
+	return strings.Fields(lowered)
 }
 
 func getCommands() map[string]cliCommand {
@@ -79,6 +81,11 @@ func getCommands() map[string]cliCommand {
 			name:        "explore",
 			description: "Displays the names of the pokemon in the specified area using 'explore <area name>'",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Attempts to catch the specified pokemon using 'catch <pokemon name>'",
+			callback:    commandCatch,
 		},
 		"exit": {
 			name:        "exit",
