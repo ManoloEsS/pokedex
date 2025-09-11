@@ -2,6 +2,9 @@ package cli
 
 import (
 	"testing"
+	"time"
+
+	"github.com/ManoloEsS/pokedex/internal/api"
 )
 
 func TestCleanInput(t *testing.T) {
@@ -50,7 +53,7 @@ func TestCleanInput(t *testing.T) {
 
 func TestGetCommands(t *testing.T) {
 	commands := getCommands()
-	expectedCommands := []string{"help", "map", "mapb", "exit"}
+	expectedCommands := []string{"help", "map", "mapb", "explore", "catch", "exit"}
 
 	if len(commands) != len(expectedCommands) {
 		t.Errorf("Expected %d commands, but got %d", len(expectedCommands), len(commands))
@@ -59,6 +62,108 @@ func TestGetCommands(t *testing.T) {
 	for _, cmdName := range expectedCommands {
 		if _, ok := commands[cmdName]; !ok {
 			t.Errorf("Expected command '%s' not found", cmdName)
+		}
+	}
+}
+
+func TestConfigInitialization(t *testing.T) {
+	client := api.NewClient(5*time.Second, 5*time.Minute)
+	cfg := &Config{
+		PokeapiClient:    client,
+		nextLocationsURL: nil,
+		prevLocationsURL: nil,
+		Pokedex:          make(map[string]api.PokemonData),
+	}
+
+	// Test that the config is properly initialized
+	// We can't compare clients directly, so we'll test functionality
+	if cfg.nextLocationsURL != nil {
+		t.Error("Expected nextLocationsURL to be nil initially")
+	}
+
+	if cfg.prevLocationsURL != nil {
+		t.Error("Expected prevLocationsURL to be nil initially")
+	}
+
+	if cfg.Pokedex == nil {
+		t.Error("Expected Pokedex to be initialized")
+	}
+
+	if len(cfg.Pokedex) != 0 {
+		t.Error("Expected Pokedex to be empty initially")
+	}
+
+	// Test that we can add to the Pokedex
+	testPokemon := api.PokemonData{
+		Name: "test-pokemon",
+		ID:   1,
+	}
+	cfg.Pokedex["test"] = testPokemon
+
+	if len(cfg.Pokedex) != 1 {
+		t.Error("Expected Pokedex to have one entry after adding")
+	}
+
+	if cfg.Pokedex["test"].Name != "test-pokemon" {
+		t.Error("Expected to retrieve the added pokemon correctly")
+	}
+}
+
+func TestCleanInputEdgeCases(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected []string
+	}{
+		{
+			input:    "",
+			expected: []string{},
+		},
+		{
+			input:    "   ",
+			expected: []string{},
+		},
+		{
+			input:    "\t\n\r",
+			expected: []string{},
+		},
+		{
+			input:    "SINGLE",
+			expected: []string{"single"},
+		},
+		{
+			input:    "Multiple    Spaces   Between",
+			expected: []string{"multiple", "spaces", "between"},
+		},
+	}
+
+	for _, c := range cases {
+		actual := cleanInput(c.input)
+		if len(actual) != len(c.expected) {
+			t.Errorf("Input %q: expected %#v, got %#v", c.input, c.expected, actual)
+			continue
+		}
+		for i := range actual {
+			if actual[i] != c.expected[i] {
+				t.Errorf("Input %q: expected word %q at index %d, got %q", c.input, c.expected[i], i, actual[i])
+			}
+		}
+	}
+}
+
+func TestCommandStructureValidation(t *testing.T) {
+	commands := getCommands()
+
+	for cmdName, cmd := range commands {
+		if cmd.name != cmdName {
+			t.Errorf("Command %q: name field %q doesn't match map key", cmdName, cmd.name)
+		}
+
+		if cmd.description == "" {
+			t.Errorf("Command %q: description is empty", cmdName)
+		}
+
+		if cmd.callback == nil {
+			t.Errorf("Command %q: callback is nil", cmdName)
 		}
 	}
 }
