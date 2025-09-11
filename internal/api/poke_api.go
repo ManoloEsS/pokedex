@@ -2,77 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 )
 
-type RespShallowLocations struct {
-	Count    int     `json:"count"`
-	Next     *string `json:"next"`
-	Previous *string `json:"previous"`
-	Results  []struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"results"`
-}
-
-type AreaData struct {
-	EncounterMethodRates []struct {
-		EncounterMethod struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"encounter_method"`
-		VersionDetails []struct {
-			Rate    int `json:"rate"`
-			Version struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"version"`
-		} `json:"version_details"`
-	} `json:"encounter_method_rates"`
-	GameIndex int `json:"game_index"`
-	ID        int `json:"id"`
-	Location  struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"location"`
-	Name  string `json:"name"`
-	Names []struct {
-		Language struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"language"`
-		Name string `json:"name"`
-	} `json:"names"`
-	PokemonEncounters []struct {
-		Pokemon struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"pokemon"`
-		VersionDetails []struct {
-			EncounterDetails []struct {
-				Chance          int   `json:"chance"`
-				ConditionValues []any `json:"condition_values"`
-				MaxLevel        int   `json:"max_level"`
-				Method          struct {
-					Name string `json:"name"`
-					URL  string `json:"url"`
-				} `json:"method"`
-				MinLevel int `json:"min_level"`
-			} `json:"encounter_details"`
-			MaxChance int `json:"max_chance"`
-			Version   struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"version"`
-		} `json:"version_details"`
-	} `json:"pokemon_encounters"`
-}
-
 func (c *Client) GetLocationAreas(pageURL *string) (RespShallowLocations, error) {
-	endpoint := "location-area"
-	requestURL, err := url.JoinPath(BaseURL, endpoint)
+	requestURL, err := url.JoinPath(BaseURL, "location-area")
 	if err != nil {
 		return RespShallowLocations{}, err
 	}
@@ -81,7 +18,7 @@ func (c *Client) GetLocationAreas(pageURL *string) (RespShallowLocations, error)
 		requestURL = *pageURL
 	}
 
-	locationsResp, err := GetResponseData(c, requestURL, RespShallowLocations{})
+	locationsResp, err := GetResponseData[RespShallowLocations](c, requestURL)
 	if err != nil {
 		return RespShallowLocations{}, err
 	}
@@ -90,17 +27,12 @@ func (c *Client) GetLocationAreas(pageURL *string) (RespShallowLocations, error)
 }
 
 func (c *Client) GetAreaData(areaName string) (AreaData, error) {
-	endpoint, err := url.JoinPath("location-area", areaName)
+	requestURL, err := url.JoinPath(BaseURL, "location-area", areaName)
 	if err != nil {
 		return AreaData{}, err
 	}
 
-	requestURL, err := url.JoinPath(BaseURL, endpoint)
-	if err != nil {
-		return AreaData{}, err
-	}
-
-	areaData, err := GetResponseData(c, requestURL, AreaData{})
+	areaData, err := GetResponseData[AreaData](c, requestURL)
 	if err != nil {
 		return AreaData{}, err
 	}
@@ -108,7 +40,8 @@ func (c *Client) GetAreaData(areaName string) (AreaData, error) {
 	return areaData, nil
 }
 
-func GetResponseData[T any](client *Client, reqURL string, dataType T) (T, error) {
+func GetResponseData[T any](client *Client, reqURL string) (T, error) {
+	var dataType T
 	if val, ok := client.cache.Get(reqURL); ok {
 		err := json.Unmarshal(val, &dataType)
 		if err != nil {
@@ -126,6 +59,9 @@ func GetResponseData[T any](client *Client, reqURL string, dataType T) (T, error
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
 		return dataType, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return dataType, fmt.Errorf("bad status %d from %s", resp.StatusCode, reqURL)
 	}
 
 	defer resp.Body.Close()
