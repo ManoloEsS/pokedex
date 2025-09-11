@@ -6,17 +6,17 @@ import (
 
 func (c *Cache) Add(key string, value []byte) {
 	c.mux.Lock()
+	defer c.mux.Unlock()
 	c.cacheData[key] = cacheEntry{
 		createdAt: time.Now().UTC(),
 		val:       value,
 	}
-	c.mux.Unlock()
 }
 
 func (c *Cache) Get(key string) ([]byte, bool) {
 	c.mux.RLock()
+	defer c.mux.RUnlock()
 	value, ok := c.cacheData[key]
-	c.mux.RUnlock()
 	if !ok {
 		return nil, false
 	}
