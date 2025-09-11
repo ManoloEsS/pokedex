@@ -53,7 +53,7 @@ func TestCleanInput(t *testing.T) {
 
 func TestGetCommands(t *testing.T) {
 	commands := getCommands()
-	expectedCommands := []string{"help", "map", "mapb", "explore", "catch", "exit"}
+	expectedCommands := []string{"help", "map", "mapb", "explore", "catch", "exit", "inspect", "pokedex"}
 
 	if len(commands) != len(expectedCommands) {
 		t.Errorf("Expected %d commands, but got %d", len(expectedCommands), len(commands))
